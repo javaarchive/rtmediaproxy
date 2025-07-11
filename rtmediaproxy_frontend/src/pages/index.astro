@@ -1,0 +1,18 @@
+---
+import RoomJoin from "../components/RoomJoin";
+import RoomLaunch from "../components/RoomLaunch";
+import ThemedPage from "../layouts/ThemedPage.astro";
+---
+
+<ThemedPage>
+    <h1>Welcome to rtmediaproxy!</h1>
+    <p>
+        A wrapper for <a href="https://github.com/Glimesh/broadcast-box/">Broadcast Box</a>.
+    </p>
+    <h2>
+        Join a Room
+    </h2>
+    <RoomJoin />
+    <h2>Browser Stream Publisher</h2>
+    <RoomLaunch />
+</ThemedPage>

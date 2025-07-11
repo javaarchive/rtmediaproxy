@@ -1,0 +1,10 @@
+---
+import Page from "./Page.astro";
+
+const { title, container: noContainer } = Astro.props;
+const addContainer = noContainer ? false : true;
+---
+<Page title={title} themed={true}>
+    {
+        addContainer ? <main class="container"><slot /></main> : <slot />
+</Page>
