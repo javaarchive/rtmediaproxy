@@ -3,8 +3,7 @@ version: '3.8'
 services:
   rtmediaproxy:
     build: .
-    ports:
-      - "127.0.0.1:8080:8080"
+    network_mode: "host"
     env_file:
       - .env
     environment:
@@ -13,3 +12,13 @@ services:
       # Mount database volume for persistence
       - ./rtmediaproxy_server/database.sqlite:/app/server/database.sqlite
     restart: unless-stopped
+  broadcast-box:
+    environment:
+    - HTTP_ADDRESS="127.0.0.1:8081"
+    #- INCLUDE_PUBLIC_IP_IN_NAT_1_TO_1_IP=yes
+    image: seaduboi/broadcast-box:latest
+    hostname: broadcast-box
+    container_name: broadcast-box
+    network_mode: "host"
+    privileged: true
+    env_file: .env
