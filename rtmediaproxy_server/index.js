@@ -45,6 +45,7 @@ const channelDb = new Keyv({
 });
 
 import express from "express";
+import methodOverride from "method-override";
 import basicAuth from "express-basic-auth"
 
 const usersStr = (process.env.BASIC_AUTH_CONFIG || ":");
@@ -64,6 +65,11 @@ const FRONTEND_ROOT = process.env.FRONTEND_ROOT || path.join(process.cwd(), "../
 const downstreamUrl = process.env.DOWNSTREAM_URL || "http://localhost:4000";
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.text({
+    limit: "10mb",
+    type: "application/sdp"
+}));
 
 const serveStatic = function(filePath)  {
     return function(req, res) {
@@ -78,6 +84,7 @@ const serveStatic = function(filePath)  {
  * @param {Record<string,string>} [headersOverride={}]
  */
 async function proxyDownstream(req, res, headersOverride = {}){
+    console.log("proxying downstream", req.originalUrl, req.method);
     const path = req.originalUrl;
 
     const headers = {
@@ -88,21 +95,22 @@ async function proxyDownstream(req, res, headersOverride = {}){
     if(headers.origin) delete headers.origin; // remove origin header
     console.log("computed",headers);
     // proxy
-    console.log(downstreamUrl + path);
-    const resp = await fetch(downstreamUrl + path, {
+    // console.log(downstreamUrl + path);
+    const respPromise = fetch(downstreamUrl + path, {
         ...defaultFetchConfig,
         method: req.method,
         headers: headers,
         body: req.body, // pipe/stream magic
     });
-
+    const resp = await respPromise;
     res.status(resp.status);
     res.contentType(resp.headers.get("content-type") || "application/octet-stream"); // default to octet-stream if no content-type is set
     for (const [key, value] of resp.headers) {
-        console.log(key, value);
+        // console.log(key, value);
         res.setHeader(key, value);
     }
     resp.body.pipe(res); // support stream stuff
+    resp.body.pipe(process.stdout);
 }
 
 async function proxyDownstreamWithPermissionCheck(req, res) {
@@ -139,18 +147,19 @@ app.all("/assets/:unused", proxyDownstream);
 app.all("/statistics", proxyDownstream);
 app.all("/publish/:unused", proxyDownstream);
 
-
-app.get("/", express.static(FRONTEND_ROOT));
-app.get("/_astro", express.static(FRONTEND_ROOT));
+console.log("frontend root", FRONTEND_ROOT);
+app.use("/_astro", express.static(path.join(FRONTEND_ROOT, "_astro")));
 app.get("/", serveStatic("index.html"));
 
 app.get("/room/:unused", serveStatic("room/index.html"));
 
 const adminRouter = new express.Router();
 adminRouter.use(basicAuth(basicAuthConfig));
+adminRouter.use(methodOverride("_method")); // TODO: mitigate csrf risk.
 adminRouter.get("/", serveStatic("admin/index.html"));
+adminRouter.get("/room/:unused", serveStatic("admin/index.html"));
 
-adminRouter.post("/room", async (req, res) => {
+adminRouter.post("/api/room", async (req, res) => {
     if(!req.body || !req.body.roomId || typeof req.body.roomId !== "string") {
         res.status(400).send("Bad Request (string roomId is required)");
         return;
@@ -166,10 +175,108 @@ adminRouter.post("/room", async (req, res) => {
         keys: [],
         desc: "No description provided",
         createdAt: new Date().toISOString(),
+        features: []
     });
+
+    if(req.body.frontend){
+        res.redirect("/admin/room/" + roomId);
+    }else{
+        res.json({
+            roomId: roomId,
+            message: "Room created successfully."
+        });
+    }
+});
+
+adminRouter.get("/api/room/:roomId", async (req, res) => {
+    const roomId = req.params.roomId;
+    const room = await roomDb.get(roomId);
+    if(!room) {
+        res.status(404).send("Not Found");
+    }else{
+        res.json(room);
+    }
+});
+
+adminRouter.get("/api/rooms", async (req, res) => {
+    let output = [];
+    for await (const [key, value] of roomDb.iterator()) {
+        output.push({
+            roomId: key,
+            desc: value.desc,
+            createdAt: value.createdAt,
+        })
+    };
+    res.json(output);
+});
+
+const indexDbsForProp = {
+    "keys": keyDb,
+    "channels": channelDb,
+}
+const EDITABLE_LIST_ATTRIBUTES = ["channels", "keys", "features"];
+adminRouter.post("/api/room/:roomId", async (req, res) => {
+    const roomId = req.params.roomId;
+    const room = await roomDb.get(roomId);
+    if(!room) {
+        res.status(404).send("Not Found");
+        return;
+    }
+    const key = req.body.key;
+    if(!key || !EDITABLE_LIST_ATTRIBUTES.includes(key)) {
+        res.status(400).send("Bad Request (key is required and must be one of " + EDITABLE_LIST_ATTRIBUTES.join(", ") + ")");
+        return;
+    }
+    if(!req.body.value || typeof req.body.value !== "string") {
+        res.status(400).send("Bad Request (value is required and must be a string)");
+        return;
+    }
+    if(req.body.delete){
+        room[key] = room[key].filter((item) => item !== req.body.value);
+        if(indexDbsForProp[key]) {
+            await indexDbsForProp[key].delete(req.body.value);
+        }
+    }else{
+        room[key].push(req.body.value);
+        if(indexDbsForProp[key]) {
+            await indexDbsForProp[key].set(req.body.value, roomId);
+        }
+    }
+    await roomDb.set(roomId, room);
+    if(req.body.frontend){
+        res.redirect("/admin/room/" + roomId + "?message=" + encodeURIComponent("Successfully updated room property."));
+        return;
+    }else{
+        res.json({
+            ok: true,
+            message: "Successfully updated room",
+            values: room[key]
+        });
+    }
+});
+
+adminRouter.delete("/api/room/:roomId", async (req, res) => {
+    const roomId = req.params.roomId;
+    const room = await roomDb.get(roomId);
+    if(!room) {
+        res.status(404).send("Not Found");
+        return;
+    }
+    // room deletion process needs to deassociate stuff
+    for(let i = 0; i < room.channels.length; i++) {
+        const channel = await channelDb.get(room.channels[i]);
+        await channelDb.delete(room.channels[i]);
+    }
+
+    for(let i = 0; i < room.keys.length; i++) {
+        const key = await keyDb.get(room.keys[i]);
+        await keyDb.delete(room.keys[i]);
+    }
+    // delete fully
+    await roomDb.delete(roomId);
     res.json({
-        roomId: roomId,
-        message: "Room created successfully."
+        ok: true,
+        message: "Successfully deleted room",
     });
 });
 

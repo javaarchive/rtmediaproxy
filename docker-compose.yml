@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  rtmediaproxy:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    environment:
+      - PORT=8080
+    volumes:
+      # Mount database volume for persistence
+      - ./rtmediaproxy_server/database.sqlite:/app/server/database.sqlite
+    restart: unless-stopped

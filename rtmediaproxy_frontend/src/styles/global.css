@@ -1,0 +1,8 @@
+.stream-key {
+    filter: blur(8px);
+    transition: filter 0.5s;
+}
+
+.stream-key:hover {
+    filter: blur(0px);
+}

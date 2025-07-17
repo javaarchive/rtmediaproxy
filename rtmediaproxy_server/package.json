@@ -14,6 +14,7 @@
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "keyv": "^5.3.4",
+    "method-override": "^3.0.0",
     "node-fetch": "^3.3.2"
   },
   "type": "module"
