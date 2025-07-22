@@ -21,6 +21,5 @@ export function DiscordMagicRedirect(props) {
         }
     },  []);
     return <>
-        ...
     </>;
 }
