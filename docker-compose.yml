@@ -12,6 +12,8 @@ services:
       # Mount database volume for persistence
       - ./rtmediaproxy_server/database.sqlite:/app/server/database.sqlite
     restart: unless-stopped
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"
   broadcast-box:
     environment:
     - HTTP_ADDRESS="127.0.0.1:8081"

@@ -423,7 +423,7 @@ app.use("/admin", adminRouter);
 // passthrough player as well for now
 app.all("/:unused", proxyDownstream);
 
-app.listen(PORT, () => {
+app.listen(PORT, process.env.HOSTNAME || "0.0.0.0", () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Configured downstream URL: ${downstreamUrl}`);
     if(discordIntegrationEnabled){

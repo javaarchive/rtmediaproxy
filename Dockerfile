@@ -1,5 +1,5 @@
 # Use Node.js 22 with Debian Buster Slim
-FROM node:22-buster-slim
+FROM node:22-bookworm-slim
 
 # Set working directory
 WORKDIR /app
