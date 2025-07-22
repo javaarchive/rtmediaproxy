@@ -1,3 +1,10 @@
+.container-fullscreen {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
 .stream-key {
     filter: blur(8px);
     transition: filter 0.5s;
@@ -6,3 +13,45 @@
 .stream-key:hover {
     filter: blur(0px);
 }
+
+.container {
+    min-height: 100vh;
+}
+
+.room-loader {
+    height: 100%;
+}
+
+.room {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.room-media {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.room-media-video {
+    width: 100%;
+    height: 100%;
+}
+
+.room-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* todo: overlay font, will do a sep overlay for debug stats */

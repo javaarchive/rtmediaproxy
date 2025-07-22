@@ -1,10 +1,31 @@
 ---
 import Page from "./Page.astro";
 
-const { title, container: noContainer } = Astro.props;
+const { title, container: noContainer, fluid } = Astro.props;
 const addContainer = noContainer ? false : true;
+const containerClass = fluid ? "container-fluid" : "container";
 ---
 <Page title={title} themed={true}>
     {
-        addContainer ? <main class="container"><slot /></main> : <slot />
+        addContainer ? <main class={containerClass} id="main"><slot /></main> : <slot />
+    }
 </Page>
+<script>
+    const usp = new URLSearchParams(window.location.search);
+    if(usp.has("fullscreen")){
+        const main = document.getElementById("main");
+        if(main) {
+            main.classList.remove("container");
+            main.classList.remove("container-fluid");
+            main.classList.add("container-fullscreen");
+        }else{
+            console.warn("Could not find main element");
+        }
+    }
+</script>
+<noscript>
+    <h1>This app can't do anything without JavaScript enabled.</h1>
+    <p>
+        Please turn it on. If you don't nothing will happen here.
+    </p>
+</noscript>

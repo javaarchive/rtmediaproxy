@@ -43,6 +43,10 @@ const channelDb = new Keyv({
     store: new KeyvSqlite(dbUrl),
     namespace: "channel"
 });
+const discordIntegrationClientID = process.env.DISCORD_INTEGRATION_CLIENT_ID || "";
+const discordIntegrationClientSecret = process.env.DISCORD_INTEGRATION_CLIENT_SECRET || "";
+const discordIntegrationLite = process.env.DISCORD_INTEGRATION_LITE ? true : false;
+const discordIntegrationEnabled = (discordIntegrationLite || (discordIntegrationClientID && discordIntegrationClientSecret)) ? true : false;
 
 import express from "express";
 import methodOverride from "method-override";
@@ -84,8 +88,12 @@ const serveStatic = function(filePath)  {
  * @param {Record<string,string>} [headersOverride={}]
  */
 async function proxyDownstream(req, res, headersOverride = {}){
-    console.log("proxying downstream", req.originalUrl, req.method);
-    const path = req.originalUrl;
+    
+    let path = req.originalUrl;
+    if(path.startsWith("/.proxy") && discordIntegrationEnabled){
+        path = path.slice("/.proxy".length);
+    }
+    console.log("proxying downstream", path, req.method);
 
     const headers = {
         ...req.headers,
@@ -137,6 +145,13 @@ async function proxyDownstreamWithPermissionCheck(req, res) {
 app.all("/api/whep", proxyDownstream);
 app.all("/api/sse", proxyDownstream);
 app.all("/api/sse/:unused", proxyDownstream);
+// client only routes but for discord
+if(discordIntegrationEnabled) {
+    app.all("/.proxy/api/whep", proxyDownstream);
+    app.all("/.proxy/api/sse", proxyDownstream);
+    app.all("/.proxy/api/sse/:unused", proxyDownstream);
+}
+
 app.all("/api/layer", proxyDownstream);
 app.all("/api/layer/:unused", proxyDownstream);
 app.all("/api/status", proxyDownstream);
@@ -149,9 +164,129 @@ app.all("/publish/:unused", proxyDownstream);
 
 console.log("frontend root", FRONTEND_ROOT);
 app.use("/_astro", express.static(path.join(FRONTEND_ROOT, "_astro")));
+app.use("/static", express.static(path.join(FRONTEND_ROOT, "static")));
 app.get("/", serveStatic("index.html"));
 
+app.get("/room", serveStatic("room/index.html"));
 app.get("/room/:unused", serveStatic("room/index.html"));
+app.get("/discord", serveStatic("discord/index.html"));
+
+// frontend public apis
+const apiRouter = new express.Router();
+
+apiRouter.get("/api/room/:roomId", async (req, res) => {
+    const roomId = req.params.roomId;
+    const room = await roomDb.get(roomId);
+    if(!room) {
+        res.status(404).send("Not Found");
+        return;
+    }
+
+    const roomPublic = {
+        id: roomId,
+        desc: room.desc,
+        createdAt: room.createdAt,
+        features: room.features,
+        keysLength: room.keys.length,
+        channelsLength: room.channels.length,
+        structType: "public",
+        type: "room"
+    };
+
+    res.json(roomPublic);
+});
+
+apiRouter.get("/api/channel/:channelId", async (req, res) => {
+    const channelId = req.params.channelId;
+    const roomId = await channelDb.get(channelId);
+    if(!roomId) {
+        res.status(404).send("Not Found (channel link)");
+        return;
+    }
+    if(!roomId) {
+        res.status(404).send("Not Found (room target)");
+        return;
+    }
+
+    const room = await roomDb.get(roomId);
+
+    res.json({
+        room: {
+            roomId: roomId,
+            id: roomId,
+            desc: room.desc,
+        },
+        lite: discordIntegrationLite,
+    });
+});
+
+if(discordIntegrationEnabled) {
+    if(discordIntegrationClientID && discordIntegrationClientSecret) {
+        apiRouter.get("/api/discord/init", async (req, res) => {
+            res.json({
+                enabled: true,
+                clientID: discordIntegrationClientID,
+            })
+        });
+
+        apiRouter.get("/api/discord/token", async (req, res) => {
+            try{
+                if(!req.body || !req.body.code || typeof req.body.code !== "string") {
+                    res.status(400).send("Bad Request (string code is required)");
+                    return;
+                }
+                const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+                    ...defaultFetchConfig,
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({
+                        client_id: discordIntegrationClientID,
+                        client_secret: discordIntegrationClientSecret,
+                        grant_type: "authorization_code",
+                        code: req.body.code,
+                    })
+                });
+
+                if(!tokenResponse.ok) {
+                    res.status(401).send("Discord token request failed with status code " + tokenResponse.status);
+                    return;
+                }
+
+                const tokenResponseJson = await tokenResponse.json();
+                if(!json.access_token){
+                    res.status(401).send("Discord token response did not contain access token???");
+                    return;
+                }
+
+                res.json({
+                    ok: true,
+                    token: tokenResponseJson.access_token,
+                });
+            }catch(ex){
+                if(typeof ex === "string") {
+                    res.status(401).send(ex);
+                    console.log("discord token error", ex);
+                    return;
+                }
+                console.error("Error getting Discord token", ex);
+                res.status(500).send("Internal Server Error");
+                return;
+            }
+        });
+    } else {
+        // lite mode only
+        apiRouter.all("/api/discord/:unused", (req, res) => {
+            res.status(501).send("This server uses lite mode discord integration so these endpoints are not available.");
+        });
+    }
+}
+
+app.use("/", apiRouter);
+if(discordIntegrationEnabled) {
+    app.use("/.proxy", apiRouter);
+}
 
 const adminRouter = new express.Router();
 adminRouter.use(basicAuth(basicAuthConfig));
@@ -189,6 +324,7 @@ adminRouter.post("/api/room", async (req, res) => {
 });
 
 adminRouter.get("/api/room/:roomId", async (req, res) => {
+    // sending room as is, fine for admin
     const roomId = req.params.roomId;
     const room = await roomDb.get(roomId);
     if(!room) {
@@ -290,4 +426,7 @@ app.all("/:unused", proxyDownstream);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Configured downstream URL: ${downstreamUrl}`);
+    if(discordIntegrationEnabled){
+        console.log("Discord integration enabled with client ID:", discordIntegrationClientID);
+    }
 });
