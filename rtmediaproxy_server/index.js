@@ -68,6 +68,10 @@ const PORT = process.env.PORT || 3000;
 const FRONTEND_ROOT = process.env.FRONTEND_ROOT || path.join(process.cwd(), "../rtmediaproxy_frontend/dist");
 const downstreamUrl = process.env.DOWNSTREAM_URL || "http://localhost:4000";
 
+if(process.env.TRUST_PROXY){
+    app.set("trust proxy", true);
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text({
