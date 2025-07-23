@@ -14,7 +14,7 @@ import ThemedPage from "../layouts/ThemedPage.astro";
     <h2>
         Join a Room
     </h2>
-    <RoomJoin />
+    <RoomJoin client:only="react" />
     <h2>Browser Stream Publisher</h2>
-    <RoomLaunch />
+    <RoomLaunch client:only="react" />
 </ThemedPage>

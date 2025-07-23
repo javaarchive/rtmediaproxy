@@ -9,9 +9,10 @@ services:
     environment:
       - PORT=8080
       - NODE_ENV=production
+      - DB_URL=sqlite:///app/server/database/db.sqlite
     volumes:
       # Mount database volume for persistence
-      - ./rtmediaproxy_server/database.sqlite:/app/server/database.sqlite
+      - ./rtmediaproxy_server/database:/app/server/database
     restart: unless-stopped
     #extra_hosts:
     #  - "host.docker.internal:host-gateway"

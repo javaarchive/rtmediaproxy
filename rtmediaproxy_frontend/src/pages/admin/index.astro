@@ -5,7 +5,7 @@ import MiniRouter from "../../components/MiniRouter";
 import ThemedPage from "../../layouts/ThemedPage.astro";
 ---
 
-<ThemedPage>
+<ThemedPage title="Server Admin Page">
     <MiniRouter path="/admin" strict={true} client:only="react">
         <h2>
             Server Rooms List
