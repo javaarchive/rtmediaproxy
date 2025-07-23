@@ -122,11 +122,11 @@ export default function Room(props) {
         }
     }
 
-    return <div className="room" id={"room-" + room.id} data-room-id={room.id} onKeyUp={onKeyUp} tabIndex={0}>
+    return <div className="room" id={"room-" + room.id} data-room-id={room.id} onKeyUp={onKeyUp} onTouchEnd={onUserInteraction} tabIndex={0}>
         <div className="room-media">
             <video ref={videoRef} controls={hasControls} className="room-media-video"></video>
         </div>
-        <div className="room-overlay" onClick={onUserInteraction}>
+        <div className="room-overlay" onClick={onUserInteraction} onMouseDownCapture={onUserInteraction}>
             <span className="room-overlay-text">
                 {overlayText}
             </span>
