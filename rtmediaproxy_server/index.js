@@ -161,12 +161,12 @@ app.all("/api/layer/:unused", proxyDownstream);
 app.all("/api/status", proxyDownstream);
 // authed api routes
 app.all("/api/whip", proxyDownstreamWithPermissionCheck);
-// frontend
-app.all("/assets/:unused", proxyDownstream);
+// frontend - proxy broadcast box routes
 app.all("/statistics", proxyDownstream);
 app.all("/publish/:unused", proxyDownstream);
 
 console.log("frontend root", FRONTEND_ROOT);
+// Serve Vite build assets
 app.use("/assets", express.static(path.join(FRONTEND_ROOT, "assets")));
 app.use("/static", express.static(path.join(FRONTEND_ROOT, "static")));
 app.get("/favicon.svg", serveStatic("favicon.svg"));
