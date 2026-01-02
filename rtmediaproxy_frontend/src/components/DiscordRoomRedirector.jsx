@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiPath, checkChannelRoomAssociation } from "../utils";
 import { DiscordSDK } from "@discord/embedded-app-sdk";
-import { init } from "astro/virtual-modules/prefetch.js";
 
 export function DiscordRoomRedirector(props) {
 

@@ -167,13 +167,14 @@ app.all("/statistics", proxyDownstream);
 app.all("/publish/:unused", proxyDownstream);
 
 console.log("frontend root", FRONTEND_ROOT);
-app.use("/_astro", express.static(path.join(FRONTEND_ROOT, "_astro")));
+app.use("/assets", express.static(path.join(FRONTEND_ROOT, "assets")));
 app.use("/static", express.static(path.join(FRONTEND_ROOT, "static")));
+app.get("/favicon.svg", serveStatic("favicon.svg"));
 app.get("/", serveStatic("index.html"));
 
-app.get("/room", serveStatic("room/index.html"));
-app.get("/room/:unused", serveStatic("room/index.html"));
-app.get("/discord", serveStatic("discord/index.html"));
+app.get("/room", serveStatic("index.html"));
+app.get("/room/:unused", serveStatic("index.html"));
+app.get("/discord", serveStatic("index.html"));
 
 // frontend public apis
 const apiRouter = new express.Router();
@@ -295,8 +296,8 @@ if(discordIntegrationEnabled) {
 const adminRouter = new express.Router();
 adminRouter.use(basicAuth(basicAuthConfig));
 adminRouter.use(methodOverride("_method")); // TODO: mitigate csrf risk.
-adminRouter.get("/", serveStatic("admin/index.html"));
-adminRouter.get("/room/:unused", serveStatic("admin/index.html"));
+adminRouter.get("/", serveStatic("index.html"));
+adminRouter.get("/room/:unused", serveStatic("index.html"));
 
 adminRouter.post("/api/room", async (req, res) => {
     if(!req.body || !req.body.roomId || typeof req.body.roomId !== "string") {
