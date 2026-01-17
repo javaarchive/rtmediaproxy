@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { apiPath, checkChannelRoomAssociation } from "../utils";
 import { DiscordSDK } from "@discord/embedded-app-sdk";
 
 export function DiscordRoomRedirector(props) {
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const [statusText, setStatusText] = useState("Hold tight while we connect with Discord...");
     const [debugInfo, setDebugInfo] = useState("");
@@ -12,7 +15,7 @@ export function DiscordRoomRedirector(props) {
             // this codepath doesn't work because we can't ready this late in  an activty so just use the lite mode only.
             try{
 
-                setDebugInfo(`Cur params: ${JSON.stringify(location.search)} raw: ${location.search}`);
+                setDebugInfo(`Cur params: "${location.search}" raw:${location.search}`);
 
                 const response = await fetch(apiPath("/api/discord/init"));
                 if(!response.ok) {
@@ -66,9 +69,9 @@ export function DiscordRoomRedirector(props) {
                     access_token: tokenResponseJson.token,
                 });
 
-                // TODO: fetch more info in future with this
-                setStatusText("Detecting room...");
-                await checkChannelRoomAssociation(discordSdk.channelId, true, false);
+                                // TODO: fetch more info in future with this
+                                setStatusText("Detecting room...");
+                                await checkChannelRoomAssociation(discordSdk.channelId, true, false, navigate);
 
             }catch(ex){
                 console.warn(ex);

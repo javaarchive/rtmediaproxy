@@ -18,7 +18,7 @@ export function apiPath(path) {
   return detectDiscordActivity() ? "/.proxy" + path : path;
 }
 
-export async function checkChannelRoomAssociation(channelID, redirect = true, liteOnly = false) {
+export async function checkChannelRoomAssociation(channelID, redirect = true, liteOnly = false, navigateFn = null) {
   const response = await fetch(apiPath("/api/channel/" + channelID));
   try{
     if(response.ok){
@@ -28,10 +28,15 @@ export async function checkChannelRoomAssociation(channelID, redirect = true, li
           if(!liteOnly || channelData.lite) {
 
             // add fullscreen=1 to the current url
-            const url = new URL(location.href);
+            const url = new URL(window.location.href);
             url.searchParams.set("fullscreen", "1");
 
-            location.href = `/room/${encodeURIComponent(channelData.room.roomId)}${url.search}`;
+            const destination = `/room/${encodeURIComponent(channelData.room.roomId)}${url.search}`;
+            if(navigateFn) {
+              navigateFn(destination);
+            } else {
+              window.location.href = destination;
+            }
             return channelData.room.roomId;
           } else {
             return channelData.room.roomId;
