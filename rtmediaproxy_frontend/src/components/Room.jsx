@@ -1,4 +1,3 @@
-import { set } from "astro:schema";
 import { useEffect, useRef, useState } from "react";
 import { acquireWebRTC, apiPath } from "../utils";
 

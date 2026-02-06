@@ -8,9 +8,9 @@ WORKDIR /app
 COPY rtmediaproxy_frontend/package.json rtmediaproxy_frontend/package-lock.json* ./frontend/
 COPY rtmediaproxy_server/package.json rtmediaproxy_server/package-lock.json* ./server/
 
-# Install frontend dependencies
+# Install frontend dependencies (including devDependencies for build)
 WORKDIR /app/frontend
-RUN npm ci --only=production
+RUN npm ci
 
 # Install server dependencies
 WORKDIR /app/server

@@ -1,0 +1,28 @@
+# Dependencies
+**/node_modules
+
+# Build outputs (let Docker build these fresh)
+**/dist
+
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode
+.idea
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Database files (mounted as volume instead)
+rtmediaproxy_server/database/

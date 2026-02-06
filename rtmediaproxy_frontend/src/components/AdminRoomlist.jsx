@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 export default function AdminRoomlist() {
     const [rooms, setRooms] = useState([]);
@@ -15,7 +16,7 @@ export default function AdminRoomlist() {
             rooms.length > 0 ? <ul>
             {rooms.map(room => (
                 <li key={room.roomId}>
-                    <a href={`/admin/room/${room.roomId}`}>{room.roomId}</a>
+                    <Link to={`/admin/room/${room.roomId}`}>{room.roomId}</Link>
                 </li>
             ))}</ul> : <p>No rooms found...yet?</p>
         }
