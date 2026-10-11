@@ -1,20 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { acquireWebRTC, apiPath } from "../utils";
+import LiveVideoControls from "./LiveVideoControls";
 
 // adapted from
 export default function Room(props) {
     const [overlayText, setOverlayText] = useState("");
-    const [hasControls , setHasControls] = useState(true);
+    const [activated, setActivated] = useState(false);
+    const activatedRef = useRef(false);
+    const containerRef = useRef(null);
     const [sdpOffer, setSdpOffer] = useState("");
     const videoRef = useRef(null);
     const peerConnectionRef = useRef(null);
     const room = props.room;
+
+    function startPlayback() {
+        const video = videoRef.current;
+        if(!video) return;
+        video.muted = false;
+        video.play().catch(err => console.warn("Playback failed to start", err));
+        setOverlayText("");
+    }
     
     useEffect(() => {
         // connection process
         setOverlayText("Initializing stream parameters...");
-        // allow controls during this stage for debug
-        setHasControls(true);
 
         const RTCPeerConnectionUniversial = acquireWebRTC();
 
@@ -40,9 +49,13 @@ export default function Room(props) {
                 return;
             }
 
-            setOverlayText("Click to start playback");
-
             videoRef.current.srcObject = event.streams[0];
+
+            if(activatedRef.current) {
+                startPlayback();
+            } else {
+                setOverlayText("Click to start playback");
+            }
         };
 
         peerConnection.addEventListener("track", onTrack);
@@ -94,41 +107,22 @@ export default function Room(props) {
         return <div>Invalid room data</div>;
     }
 
-    function onUserInteraction(event) {
-        if(videoRef.current) {
-            videoRef.current.muted = false;
-            videoRef.current.play();
-            setOverlayText("");
-        }
+    function onActivate() {
+        activatedRef.current = true;
+        setActivated(true);
+        startPlayback();
     }
 
-    function onKeyUp(event) {
-        // check for F key
-        if(event.key === "f"){
-            console.log("fullscreen");
-            if(videoRef.current) {
-                if(document.fullscreenElement == videoRef.current) {
-                    document.exitFullscreen();
-                } else {
-                    videoRef.current.requestFullscreen();
-                }
-            }
-        }else if(event.key == "p"){
-            // request pip
-            if(videoRef.current) {
-                videoRef.current.requestPictureInPicture();
-            }
-        }
-    }
-
-    return <div className="room" id={"room-" + room.id} data-room-id={room.id} onKeyUp={onKeyUp} onTouchEnd={onUserInteraction} tabIndex={0}>
+    return <div ref={containerRef} className="room" id={"room-" + room.id} data-room-id={room.id} tabIndex={0}>
         <div className="room-media">
-            <video ref={videoRef} controls={hasControls} className="room-media-video"></video>
+            <video ref={videoRef} playsInline className="room-media-video"></video>
         </div>
-        <div className="room-overlay" onClick={onUserInteraction} onMouseDownCapture={onUserInteraction}>
-            <span className="room-overlay-text">
-                {overlayText}
-            </span>
-        </div>
+        <LiveVideoControls
+            videoRef={videoRef}
+            containerRef={containerRef}
+            activated={activated}
+            statusText={overlayText}
+            onActivate={onActivate}
+        />
     </div>
 }
