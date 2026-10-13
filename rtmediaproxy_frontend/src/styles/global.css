@@ -56,3 +56,139 @@
 }
 
 /* todo: overlay font, will do a sep overlay for debug stats */
+
+.room:fullscreen {
+    background: black;
+}
+
+.room-overlay-idle {
+    cursor: none;
+}
+
+.room-overlay-text {
+    pointer-events: none;
+    color: white;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.live-controls-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2.5rem 0.75rem 0.5rem;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.75));
+    color: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    cursor: default;
+}
+
+.live-controls-bar.live-controls-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.live-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.live-controls-bar .live-controls-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    margin: 0;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    color: white;
+    line-height: 0;
+    cursor: pointer;
+}
+
+.live-controls-bar .live-controls-btn:hover,
+.live-controls-bar .live-controls-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.live-controls-bar input[type="range"].live-controls-volume {
+    --volume-fill: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 6rem;
+    height: 4px;
+    margin: 0 0.5rem 0 0.25rem;
+    padding: 0;
+    border: none;
+    border-radius: 2px;
+    background: linear-gradient(to right, white var(--volume-fill), rgba(255, 255, 255, 0.3) var(--volume-fill));
+    cursor: pointer;
+}
+
+.live-controls-bar input[type="range"].live-controls-volume::-webkit-slider-runnable-track {
+    height: 4px;
+    border: none;
+    background: transparent;
+}
+
+.live-controls-bar input[type="range"].live-controls-volume::-moz-range-track {
+    height: 4px;
+    border: none;
+    background: transparent;
+}
+
+.live-controls-bar input[type="range"].live-controls-volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -4px;
+    border: none;
+    border-radius: 50%;
+    background: white;
+    box-shadow: none;
+}
+
+.live-controls-bar input[type="range"].live-controls-volume::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: white;
+}
+
+.live-controls-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.live-controls-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e53935;
+}
+
+@media (pointer: coarse) {
+    .live-controls-bar .live-controls-btn {
+        padding: 0.75rem;
+    }
+
+    .live-controls-bar input[type="range"].live-controls-volume::-webkit-slider-thumb {
+        width: 16px;
+        height: 16px;
+        margin-top: -6px;
+    }
+}

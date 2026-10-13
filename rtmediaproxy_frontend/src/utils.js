@@ -53,7 +53,7 @@ export async function checkChannelRoomAssociation(channelID, redirect = true, li
 }
 
 export function acquireWebRTC(){
-  const currentWebRTC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+  let currentWebRTC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
   if(!currentWebRTC){
     // attempt bypass
     // for discord activities specifically
